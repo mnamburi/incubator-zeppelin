@@ -48,12 +48,11 @@ import org.apache.spark.sql.SQLContext;
 import org.apache.zeppelin.interpreter.Interpreter;
 import org.apache.zeppelin.interpreter.InterpreterContext;
 import org.apache.zeppelin.interpreter.InterpreterException;
-import org.apache.zeppelin.interpreter.InterpreterGroup;
-import org.apache.zeppelin.interpreter.InterpreterPropertyBuilder;
 import org.apache.zeppelin.interpreter.InterpreterResult;
 import org.apache.zeppelin.interpreter.InterpreterResult.Code;
 import org.apache.zeppelin.interpreter.LazyOpenInterpreter;
 import org.apache.zeppelin.interpreter.WrappedInterpreter;
+import org.apache.zeppelin.interpreter.thrift.InterpreterCompletion;
 import org.apache.zeppelin.spark.dep.SparkDependencyContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,17 +75,7 @@ public class PySparkInterpreter extends Interpreter implements ExecuteResultHand
   private ByteArrayOutputStream input;
   private String scriptPath;
   boolean pythonscriptRunning = false;
-
-  static {
-    Interpreter.register(
-        "pyspark",
-        "spark",
-        PySparkInterpreter.class.getName(),
-        new InterpreterPropertyBuilder()
-          .add("zeppelin.pyspark.python",
-               SparkInterpreter.getSystemDefault("PYSPARK_PYTHON", null, "python"),
-               "Python command to run pyspark with").build());
-  }
+  private static final int MAX_TIMEOUT_SEC = 10;
 
   public PySparkInterpreter(Properties property) {
     super(property);
@@ -191,7 +180,7 @@ public class PySparkInterpreter extends Interpreter implements ExecuteResultHand
     cmd.addArgument(Integer.toString(port), false);
     cmd.addArgument(Integer.toString(getSparkInterpreter().getSparkVersion().toNumber()), false);
     executor = new DefaultExecutor();
-    outputStream = new SparkOutputStream();
+    outputStream = new SparkOutputStream(logger);
     PipedOutputStream ps = new PipedOutputStream();
     in = null;
     try {
@@ -328,7 +317,7 @@ public class PySparkInterpreter extends Interpreter implements ExecuteResultHand
       long startTime = System.currentTimeMillis();
       while (pythonScriptInitialized == false
           && pythonscriptRunning
-          && System.currentTimeMillis() - startTime < 10 * 1000) {
+          && System.currentTimeMillis() - startTime < MAX_TIMEOUT_SEC * 1000) {
         try {
           pythonScriptInitializeNotifier.wait(1000);
         } catch (InterruptedException e) {
@@ -413,7 +402,7 @@ public class PySparkInterpreter extends Interpreter implements ExecuteResultHand
 
 
   @Override
-  public List<String> completion(String buf, int cursor) {
+  public List<InterpreterCompletion> completion(String buf, int cursor) {
     if (buf.length() < cursor) {
       cursor = buf.length();
     }
@@ -424,7 +413,7 @@ public class PySparkInterpreter extends Interpreter implements ExecuteResultHand
     SparkInterpreter sparkInterpreter = getSparkInterpreter();
     if (sparkInterpreter.getSparkVersion().isUnsupportedVersion() == false
             && pythonscriptRunning == false) {
-      return new LinkedList<String>();
+      return new LinkedList<>();
     }
 
     pythonInterpretRequest = new PythonInterpretRequest(completionCommand, "");
@@ -435,26 +424,37 @@ public class PySparkInterpreter extends Interpreter implements ExecuteResultHand
     }
 
     synchronized (statementFinishedNotifier) {
-      while (statementOutput == null) {
+      long startTime = System.currentTimeMillis();
+      while (statementOutput == null
+        && pythonScriptInitialized == false
+        && pythonscriptRunning) {
         try {
+          if (System.currentTimeMillis() - startTime < MAX_TIMEOUT_SEC * 1000) {
+            logger.error("pyspark completion didn't have response for {}sec.", MAX_TIMEOUT_SEC);
+            break;
+          }
           statementFinishedNotifier.wait(1000);
         } catch (InterruptedException e) {
           // not working
           logger.info("wait drop");
-          return new LinkedList<String>();
+          return new LinkedList<>();
         }
       }
     }
 
     if (statementError) {
-      return new LinkedList<String>();
+      return new LinkedList<>();
     }
     InterpreterResult completionResult = new InterpreterResult(Code.SUCCESS, statementOutput);
     //end code for completion
 
     Gson gson = new Gson();
-
-    return gson.fromJson(completionResult.message(), LinkedList.class);
+    String[] completionList = gson.fromJson(completionResult.message(), String[].class);
+    List<InterpreterCompletion> results = new LinkedList<>();
+    for (String name: completionList) {
+      results.add(new InterpreterCompletion(name, name));
+    }
+    return results;
   }
 
   private String getCompletionTargetString(String text, int cursor) {
@@ -533,6 +533,15 @@ public class PySparkInterpreter extends Interpreter implements ExecuteResultHand
       return null;
     } else {
       return new JavaSparkContext(intp.getSparkContext());
+    }
+  }
+
+  public Object getSparkSession() {
+    SparkInterpreter intp = getSparkInterpreter();
+    if (intp == null) {
+      return null;
+    } else {
+      return intp.getSparkSession();
     }
   }
 

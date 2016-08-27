@@ -1,7 +1,7 @@
 ---
 layout: page
-title: "Dependnecy Management"
-description: ""
+title: "Dependency Management for Apache Spark Interpreter"
+description: "Include external libraries to Apache Spark Interpreter by setting dependencies in interpreter menu."
 group: manual
 ---
 <!--
@@ -71,4 +71,3 @@ When your code requires external library, instead of doing download/copy/restart
     </ol>
   </div>
 </div>
-

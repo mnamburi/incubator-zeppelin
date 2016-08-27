@@ -1,7 +1,7 @@
 ---
 layout: page
-title: "Interpreter REST API"
-description: ""
+title: "Apache Zeppelin Interpreter REST API"
+description: "This page contains Apache Zeppelin Interpreter REST API information."
 group: rest-api
 ---
 <!--
@@ -19,28 +19,25 @@ limitations under the License.
 -->
 {% include JB/setup %}
 
-## Zeppelin REST API
- Zeppelin provides several REST API's for interaction and remote activation of zeppelin functionality.
- 
- All REST API are available starting with the following endpoint `http://[zeppelin-server]:[zeppelin-port]/api`.
- Note that zeppein REST API receive or return JSON objects, it it recommended you install some JSON viewers such as 
- [JSON View](https://chrome.google.com/webstore/detail/jsonview/chklaanhfefbnpoihckbnefhakgolnmc).
- 
- If you work with zeppelin and find a need for an additional REST API, please [file an issue or send us mail](http://zeppelin.incubator.apache.org/community.html). 
+# Apache Zeppelin Interpreter REST API
 
- <br />
+<div id="toc"></div>
+
+## Overview
+Apache Zeppelin provides several REST APIs for interaction and remote activation of zeppelin functionality.
+All REST APIs are available starting with the following endpoint `http://[zeppelin-server]:[zeppelin-port]/api`. 
+Note that Apache Zeppelin REST APIs receive or return JSON objects, it is recommended for you to install some JSON viewers such as [JSONView](https://chrome.google.com/webstore/detail/jsonview/chklaanhfefbnpoihckbnefhakgolnmc).
+
+If you work with Apache Zeppelin and find a need for an additional REST API, please [file an issue or send us an email](http://zeppelin.apache.org/community.html).
+
 ## Interpreter REST API List
-  
-  The role of registered interpreters, settings and interpreters group are described in [here](../manual/interpreters.html).
-  
-### 1. List of Registered Interpreters & Interpreter Settings
+
+The role of registered interpreters, settings and interpreters group are described in [here](../manual/interpreters.html).
+
+### List of registered interpreters
 
   <table class="table-configuration">
     <col width="200">
-    <tr>
-      <th>List of registered interpreters</th>
-      <th></th>
-    </tr>
     <tr>
       <td>Description</td>
       <td>This ```GET``` method returns all the registered interpreters available on the server.</td>
@@ -78,7 +75,7 @@ limitations under the License.
       "className": "org.apache.zeppelin.spark.SparkInterpreter",
       "properties": {
         "spark.executor.memory": {
-          "defaultValue": "512m",
+          "defaultValue": "1g",
           "description": "Executor memory per worker instance. ex) 512m, 32g"
         },
         "spark.cores.max": {
@@ -95,7 +92,7 @@ limitations under the License.
       "properties": {
         "zeppelin.spark.maxResult": {
           "defaultValue": "1000",
-          "description": "Max number of SparkSQL result to display."
+          "description": "Max number of Spark SQL result to display."
         }
       },
       "path": "/zeppelin/interpreter/spark"
@@ -106,15 +103,12 @@ limitations under the License.
       </td>
     </tr>
   </table>
-  
+
 <br/>
-   
+### List of registered interpreter settings
+
   <table class="table-configuration">
     <col width="200">
-    <tr>
-      <th>List of interpreters settings</th>
-      <th></th>
-    </tr>
     <tr>
       <td>Description</td>
       <td>This ```GET``` method returns all the interpreters settings registered on the server.</td>
@@ -160,7 +154,7 @@ limitations under the License.
       "group": "spark",
       "properties": {
         "spark.cores.max": "",
-        "spark.executor.memory": "512m",
+        "spark.executor.memory": "1g",
       },
       "interpreterGroup": [
         {
@@ -186,14 +180,10 @@ limitations under the License.
   </table>
 
 <br/>
-### 2. Create an Interpreter Setting  
+### Create a new interpreter setting  
 
   <table class="table-configuration">
     <col width="200">
-    <tr>
-      <th>Create an interpreter setting</th>
-      <th></th>
-    </tr>
     <tr>
       <td>Description</td>
       <td>This ```POST``` method adds a new interpreter setting using a registered interpreter to the server.</td>
@@ -208,7 +198,10 @@ limitations under the License.
     </tr>
     <tr>
       <td>Fail code</td>
-      <td> 500 </td>
+      <td>
+          400 if the input json is empty <br/>
+          500 for any other errors
+      </td>
     </tr>
     <tr>
       <td>Sample JSON input</td>
@@ -229,7 +222,9 @@ limitations under the License.
   "dependencies": [
     {
       "groupArtifactVersion": "groupId:artifactId:version",
-      "exclusions": "groupId:artifactId"
+      "exclusions": [
+        "groupId:artifactId"
+      ]
     }
   ]
 }
@@ -259,7 +254,9 @@ limitations under the License.
     "dependencies": [
       {
         "groupArtifactVersion": "groupId:artifactId:version",
-        "exclusions": "groupId:artifactId"
+        "exclusions": [
+          "groupId:artifactId"
+        ]
       }
     ]
   }
@@ -268,17 +265,11 @@ limitations under the License.
       </td>
     </tr>
   </table>
-  
-  
-<br/>
 
-### 3. Update an Interpreter Setting
+<br/>
+### Update an interpreter setting
   <table class="table-configuration">
     <col width="200">
-    <tr>
-      <th>Update an interpreter setting</th>
-      <th></th>
-    </tr>
     <tr>
       <td>Description</td>
       <td>This ```PUT``` method updates an interpreter setting with new properties.</td>
@@ -314,7 +305,9 @@ limitations under the License.
   "dependencies": [
     {
       "groupArtifactVersion": "groupId:artifactId:version",
-      "exclusions": "groupId:artifactId"
+      "exclusions": [
+        "groupId:artifactId"
+      ]
     }
   ]
 }
@@ -344,7 +337,9 @@ limitations under the License.
     "dependencies": [
       {
         "groupArtifactVersion": "groupId:artifactId:version",
-        "exclusions": "groupId:artifactId"
+        "exclusions": [
+          "groupId:artifactId"
+        ]
       }
     ]
   }
@@ -354,16 +349,11 @@ limitations under the License.
     </tr>
   </table>
 
-  
 <br/>
-### 4. Delete an Interpreter Setting
+### Delete an interpreter setting
 
   <table class="table-configuration">
     <col width="200">
-    <tr>
-      <th>Delete an interpreter setting</th>
-      <th></th>
-    </tr>
     <tr>
       <td>Description</td>
       <td>This ```DELETE``` method deletes an given interpreter setting.</td>
@@ -388,16 +378,12 @@ limitations under the License.
     </tr>
   </table>
 
-  
+
 <br/>
-### 5. Restart an Interpreter 
+### Restart an interpreter
 
   <table class="table-configuration">
     <col width="200">
-    <tr>
-      <th>Restart an interpreter</th>
-      <th></th>
-    </tr>
     <tr>
       <td>Description</td>
       <td>This ```PUT``` method restarts the given interpreter id.</td>
@@ -423,14 +409,10 @@ limitations under the License.
   </table>
 
 <br/>
-### 6. Add repository for dependency resolving
+### Add a new repository for dependency resolving
 
   <table class="table-configuration">
     <col width="200">
-    <tr>
-      <th>Add new repository for dependency loader</th>
-      <th></th>
-    </tr>
     <tr>
       <td>Description</td>
       <td>This ```POST``` method adds new repository.</td>
@@ -468,14 +450,10 @@ limitations under the License.
   </table>
 
 <br/>
-### 7. Delete repository for dependency resolving
+### Delete a repository for dependency resolving
 
   <table class="table-configuration">
     <col width="200">
-    <tr>
-      <th>Delete repository for dependency loader</th>
-      <th></th>
-    </tr>
     <tr>
       <td>Description</td>
       <td>This ```DELETE``` method delete repository with given id.</td>
@@ -493,3 +471,4 @@ limitations under the License.
       <td> 500 </td>
     </tr>
   </table>
+  

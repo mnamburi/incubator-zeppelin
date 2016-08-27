@@ -21,8 +21,10 @@ import static org.apache.zeppelin.spark.ZeppelinRDisplay.render;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.spark.SparkContext;
 import org.apache.spark.SparkRBackend;
 import org.apache.zeppelin.interpreter.*;
+import org.apache.zeppelin.interpreter.thrift.InterpreterCompletion;
 import org.apache.zeppelin.scheduler.Scheduler;
 import org.apache.zeppelin.scheduler.SchedulerFactory;
 import org.slf4j.Logger;
@@ -41,32 +43,6 @@ public class SparkRInterpreter extends Interpreter {
 
   private static String renderOptions;
   private ZeppelinR zeppelinR;
-
-  static {
-    Interpreter.register(
-      "r",
-      "spark",
-      SparkRInterpreter.class.getName(),
-      new InterpreterPropertyBuilder()
-          .add("zeppelin.R.cmd",
-              SparkInterpreter.getSystemDefault("ZEPPELIN_R_CMD", "zeppelin.R.cmd", "R"),
-              "R repl path")
-          .add("zeppelin.R.knitr",
-              SparkInterpreter.getSystemDefault("ZEPPELIN_R_KNITR", "zeppelin.R.knitr", "true"),
-              "whether use knitr or not")
-          .add("zeppelin.R.image.width",
-              SparkInterpreter.getSystemDefault("ZEPPELIN_R_IMAGE_WIDTH",
-                  "zeppelin.R.image.width", "100%"),
-              "")
-          .add("zeppelin.R.render.options",
-              SparkInterpreter.getSystemDefault("ZEPPELIN_R_RENDER_OPTIONS",
-                  "zeppelin.R.render.options",
-                  "out.format = 'html', comment = NA, "
-                      + "echo = FALSE, results = 'asis', message = F, warning = F"),
-              "")
-          .build());
-  }
-
 
   public SparkRInterpreter(Properties property) {
     super(property);
@@ -95,11 +71,16 @@ public class SparkRInterpreter extends Interpreter {
     int port = SparkRBackend.port();
 
     SparkInterpreter sparkInterpreter = getSparkInterpreter();
-    ZeppelinRContext.setSparkContext(sparkInterpreter.getSparkContext());
+    SparkContext sc = sparkInterpreter.getSparkContext();
+    SparkVersion sparkVersion = new SparkVersion(sc.version());
+    ZeppelinRContext.setSparkContext(sc);
+    if (Utils.isSpark2()) {
+      ZeppelinRContext.setSparkSession(sparkInterpreter.getSparkSession());
+    }
     ZeppelinRContext.setSqlContext(sparkInterpreter.getSQLContext());
     ZeppelinRContext.setZepplinContext(sparkInterpreter.getZeppelinContext());
 
-    zeppelinR = new ZeppelinR(rCmdPath, sparkRLibPath, port);
+    zeppelinR = new ZeppelinR(rCmdPath, sparkRLibPath, port, sparkVersion);
     try {
       zeppelinR.open();
     } catch (IOException e) {
@@ -192,8 +173,8 @@ public class SparkRInterpreter extends Interpreter {
   }
 
   @Override
-  public List<String> completion(String buf, int cursor) {
-    return new ArrayList<String>();
+  public List<InterpreterCompletion> completion(String buf, int cursor) {
+    return new ArrayList<>();
   }
 
   private SparkInterpreter getSparkInterpreter() {

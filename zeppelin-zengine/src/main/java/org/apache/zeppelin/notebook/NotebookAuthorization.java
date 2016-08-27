@@ -49,8 +49,7 @@ public class NotebookAuthorization {
     try {
       loadFromFile();
     } catch (IOException e) {
-      LOG.error("Error loading NotebookAuthorization");
-      e.printStackTrace();
+      LOG.error("Error loading NotebookAuthorization", e);
     }
   }
 
@@ -103,60 +102,58 @@ public class NotebookAuthorization {
     }
   }
 
+  private Set<String> validateUser(Set<String> users) {
+    Set<String> returnUser = new HashSet<>();
+    for (String user : users) {
+      if (!user.trim().isEmpty()) {
+        returnUser.add(user.trim());
+      }
+    }
+    return returnUser;
+  }
+
   public void setOwners(String noteId, Set<String> entities) {
     Map<String, Set<String>> noteAuthInfo = authInfo.get(noteId);
+    entities = validateUser(entities);
     if (noteAuthInfo == null) {
       noteAuthInfo = new LinkedHashMap();
       noteAuthInfo.put("owners", new LinkedHashSet(entities));
       noteAuthInfo.put("readers", new LinkedHashSet());
       noteAuthInfo.put("writers", new LinkedHashSet());
-      authInfo.put(noteId, noteAuthInfo);
     } else {
-      Set<String> existingEntities = noteAuthInfo.get("owners");
-      if (existingEntities == null) {
-        noteAuthInfo.put("owners", new LinkedHashSet(entities));
-      } else {
-        existingEntities.addAll(entities);
-      }
+      noteAuthInfo.put("owners", new LinkedHashSet(entities));
     }
+    authInfo.put(noteId, noteAuthInfo);
     saveToFile();
   }
 
   public void setReaders(String noteId, Set<String> entities) {
     Map<String, Set<String>> noteAuthInfo = authInfo.get(noteId);
+    entities = validateUser(entities);
     if (noteAuthInfo == null) {
       noteAuthInfo = new LinkedHashMap();
       noteAuthInfo.put("owners", new LinkedHashSet());
       noteAuthInfo.put("readers", new LinkedHashSet(entities));
       noteAuthInfo.put("writers", new LinkedHashSet());
-      authInfo.put(noteId, noteAuthInfo);
     } else {
-      Set<String> existingEntities = noteAuthInfo.get("readers");
-      if (existingEntities == null) {
-        noteAuthInfo.put("readers", new LinkedHashSet(entities));
-      } else {
-        existingEntities.addAll(entities);
-      }
+      noteAuthInfo.put("readers", new LinkedHashSet(entities));
     }
+    authInfo.put(noteId, noteAuthInfo);
     saveToFile();
   }
 
   public void setWriters(String noteId, Set<String> entities) {
     Map<String, Set<String>> noteAuthInfo = authInfo.get(noteId);
+    entities = validateUser(entities);
     if (noteAuthInfo == null) {
       noteAuthInfo = new LinkedHashMap();
       noteAuthInfo.put("owners", new LinkedHashSet());
       noteAuthInfo.put("readers", new LinkedHashSet());
       noteAuthInfo.put("writers", new LinkedHashSet(entities));
-      authInfo.put(noteId, noteAuthInfo);
     } else {
-      Set<String> existingEntities = noteAuthInfo.get("writers");
-      if (existingEntities == null) {
-        noteAuthInfo.put("writers", new LinkedHashSet(entities));
-      } else {
-        existingEntities.addAll(entities);
-      }
+      noteAuthInfo.put("writers", new LinkedHashSet(entities));
     }
+    authInfo.put(noteId, noteAuthInfo);
     saveToFile();
   }
 
